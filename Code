@@ -1,0 +1,114 @@
+# Import missing module and repeat the steps to generate and zip the project
+import os
+import zipfile
+from pathlib import Path
+
+# Define root directory
+project_root = Path("/mnt/data/fractal7_sapolsky")
+
+# Re-define module files from previous step
+module_files = {
+    "fractal_analysis/core/box_counting.py": """
+import numpy as np
+
+def box_counting(data, epsilons):
+    results = []
+    for eps in epsilons:
+        counts = set()
+        for point in data:
+            box = tuple((point / eps).astype(int))
+            counts.add(box)
+        results.append((eps, len(counts)))
+    return results
+""",
+    "fractal_analysis/core/hurst_exponent.py": """
+import numpy as np
+
+def hurst_exponent(ts):
+    lags = range(2, 100)
+    tau = [np.std(np.subtract(ts[lag:], ts[:-lag])) for lag in lags]
+    m, _ = np.polyfit(np.log(lags), np.log(tau), 1)
+    return m
+""",
+    "fractal_analysis/core/dfa.py": """
+import numpy as np
+from numpy.polynomial.polynomial import Polynomial
+
+def compute_dfa(signal, scale_list):
+    profile = np.cumsum(signal - np.mean(signal))
+    flucts = []
+    for scale in scale_list:
+        segments = len(profile) // scale
+        local_trends = []
+        for i in range(segments):
+            segment = profile[i * scale:(i + 1) * scale]
+            poly = Polynomial.fit(range(scale), segment, 1)
+            detrended = segment - poly(range(scale))
+            local_trends.append(np.sqrt(np.mean(detrended**2)))
+        flucts.append(np.mean(local_trends))
+    return flucts
+""",
+    "fractal_analysis/core/power_law_scaling.py": """
+import numpy as np
+import scipy.fftpack as fft
+
+def power_spectrum(signal):
+    ps = np.abs(fft.fft(signal))**2
+    freqs = fft.fftfreq(len(signal))
+    return freqs[1:], ps[1:]  # Remove DC
+""",
+    "fractal_analysis/core/wtmm.py": """
+import numpy as np
+import pywt
+
+def wtmm(signal, wavelet='mexh', scales=np.arange(1, 64)):
+    coeffs, _ = pywt.cwt(signal, scales, wavelet)
+    modulus = np.abs(coeffs)
+    maxima = np.max(modulus, axis=1)
+    return scales, maxima
+""",
+    "fractal_analysis/core/multifractal_spectrum.py": """
+import numpy as np
+
+def singularity_spectrum(ts, q_range):
+    spectrum = []
+    for q in q_range:
+        weights = np.abs(ts)**q
+        weights /= np.sum(weights)
+        entropy = -np.sum(weights * np.log(weights + 1e-10))
+        spectrum.append(entropy)
+    return q_range, np.array(spectrum)
+""",
+    "fractal_analysis/__init__.py": "",
+    "fractal_analysis/main.py": """
+import numpy as np
+from fractal_analysis.core.hurst_exponent import hurst_exponent
+from fractal_analysis.core.dfa import compute_dfa
+from fractal_analysis.core.power_law_scaling import power_spectrum
+from fractal_analysis.core.wtmm import wtmm
+from fractal_analysis.core.multifractal_spectrum import singularity_spectrum
+
+def full_fractal_analysis(signal):
+    return {
+        "hurst": hurst_exponent(signal),
+        "dfa": compute_dfa(signal, scale_list=list(range(10, 100, 10))),
+        "power": power_spectrum(signal),
+        "wtmm": wtmm(signal),
+        "spectrum": singularity_spectrum(signal, q_range=np.linspace(-5, 5, 21))
+    }
+"""
+}
+
+# Write files to disk
+for file_path, content in module_files.items():
+    full_path = project_root / file_path
+    full_path.parent.mkdir(parents=True, exist_ok=True)
+    full_path.write_text(content)
+
+# Create ZIP archive
+zip_path = f"{project_root}.zip"
+with zipfile.ZipFile(zip_path, "w") as zipf:
+    for file_path in project_root.rglob("*"):
+        zipf.write(file_path, arcname=file_path.relative_to(project_root))
+
+zip_path
