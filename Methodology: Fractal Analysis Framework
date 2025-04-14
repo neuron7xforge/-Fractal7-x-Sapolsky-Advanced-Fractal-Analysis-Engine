@@ -1,0 +1,126 @@
+```
+# FRACTAL ANALYSIS METHODOLOGY FOR NEURON7X  
+# Academic, Verified, Validated, Calibrated, Scalable
+
+## 1. DATA ACQUISITION  
+- Source: time series, EEG, BCI, market data, sensor signals  
+- Format: 1D/2D array (NumPy), uniform sampling required  
+- Preprocess: detrend, normalize, filter noise  
+
+## 2. FRACTAL DIMENSION (Box-Counting)  
+- Input: signal or 2D space  
+- Steps:  
+  1. Define a set of epsilon scales  
+  2. Count unique covering boxes  
+  3. Compute:  
+     D = lim (ε→0) [log N(ε) / log(1/ε)]  
+- Output: fractal complexity index D  
+
+## 3. MEMORY INDEX (Hurst Exponent)  
+- Input: time series  
+- Steps:  
+  1. Define lag vector l = [2..N]  
+  2. Compute τ(l) = std(x(t + l) - x(t))  
+  3. Fit log(τ) vs log(l) → slope = H  
+- Output: Hurst exponent H ∈ [0,1]  
+
+## 4. DETRENDED FLUCTUATION ANALYSIS (DFA)  
+- Input: time series  
+- Steps:  
+  1. Integrate: Y(k) = ∑ [x(i) - ⟨x⟩]  
+  2. Divide into non-overlapping segments  
+  3. Detrend with polynomial fit  
+  4. Compute fluctuation:  
+     F(n) = sqrt(mean(residual^2))  
+  5. Fit log(F(n)) vs log(n) → α  
+- Output: DFA exponent α ≈ H  
+
+## 5. POWER-LAW SCALING ANALYSIS  
+- Input: signal  
+- Steps:  
+  1. Compute FFT: S(f) = |FFT(x)|^2  
+  2. Fit power-law: S(f) ∝ f^(-β)  
+  3. Relate: β = 2H - 1  
+- Output: spectral scaling exponent β  
+
+## 6. WAVELET TRANSFORM MODULUS MAXIMA (WTMM)  
+- Input: signal, wavelet function ψ  
+- Steps:  
+  1. Compute CWT: Wψ(a,b)  
+  2. Compute modulus: |Wψ(a,b)|  
+  3. Extract maxima lines  
+  4. Fit: log |Wψ(a,b)| vs log a  
+- Output: local singularity behavior  
+
+## 7. MULTIFRACTAL SINGULARITY SPECTRUM  
+- Input: signal, q ∈ [-5,5]  
+- Steps:  
+  1. Partition signal into windows  
+  2. Compute probability measure p_i  
+  3. Compute partition function:  
+     Z(q,a) = ∑ p_i(q,a)^q  
+  4. Derive τ(q): slope of log Z(q,a)  
+  5. Legendre transform:  
+     f(α) = αq - τ(q), α = dτ/dq  
+- Output: spectrum f(α), τ(q), α  
+
+## 8. INTERPRETATION FRAMEWORK  
+- D > 1.5 → complexity, turbulence  
+- H > 0.5 → persistence, trend  
+- α-width large → multifractal state  
+- β ≈ 1 → 1/f noise, criticality  
+
+## 9. SYSTEM INTEGRATION  
+- Input: live or batch signal  
+- Output: JSON object with metrics  
+- Interface:  
+  - REST API (Flask/FastAPI)  
+  - WebSocket (BCI integration)  
+  - CLI for research pipeline  
+
+## 10. CALIBRATION PROTOCOL  
+- Benchmark against known fractals (e.g., Brownian, Mandelbrot set, white noise)  
+- Internal consistency: cross-validation of H, α, β  
+- Signal-to-noise threshold calibration  
+- Temporal resolution alignment for real-time use  
+
+## 11. VALIDATION ENVIRONMENTS  
+- Synthetic fractals  
+- Financial time series  
+- Neurophysiological data (EEG/BCI)  
+- Climate/chaotic systems  
+
+## 12. DEPLOYMENT STRUCTURE  
+- Container: Docker / Singularity  
+- Compute: CPU/GPU hybrid  
+- Logging: structured logs + visual reports  
+- CI/CD: GitHub Actions / GitLab CI  
+
+## 13. OUTPUT SCHEMA  
+```json
+{
+  "hurst": 0.72,
+  "dfa": [0.48, 0.53, 0.61, ...],
+  "fractal_dim": 1.67,
+  "beta": 0.89,
+  "wtmm": [[scale_1, max_1], [scale_2, max_2], ...],
+  "spectrum": {
+    "alpha": [...],
+    "f_alpha": [...]
+  }
+}
+```
+
+## 14. COMPATIBILITY  
+- Python 3.8+  
+- NumPy, SciPy, PyWavelets  
+- Torch/CuPy (optional GPU acceleration)  
+- Compatible with Neuron7X FractalCore API  
+
+## 15. APPLICATION DOMAINS  
+- Adaptive market pattern recognition  
+- Neural signal complexity classification  
+- Dynamical systems phase analysis  
+- Cognitive load estimation in BCI  
+
+```
